@@ -1,0 +1,109 @@
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+
+const BacBoAnalyzer = () => {
+  const [input, setInput] = useState("");
+  const [results, setResults] = useState([]);
+  const [suggestion, setSuggestion] = useState("");
+
+  const parseResults = (raw) => {
+    return raw
+      .toUpperCase()
+      .replace(/[^PBT]/g, "")
+      .split("")
+      .slice(-50); // keep only the last 50 entries
+  };
+
+  const analyze = () => {
+    const parsed = parseResults(input);
+    setResults(parsed);
+
+    const counts = { P: 0, B: 0, T: 0 };
+    parsed.forEach((r) => counts[r]++);
+
+    let suggestionText = "";
+
+    // Find streaks
+    let maxStreak = 1;
+    let currentStreak = 1;
+    let streakSymbol = parsed[0];
+    for (let i = 1; i < parsed.length; i++) {
+      if (parsed[i] === parsed[i - 1]) {
+        currentStreak++;
+        if (currentStreak > maxStreak) {
+          maxStreak = currentStreak;
+          streakSymbol = parsed[i];
+        }
+      } else {
+        currentStreak = 1;
+      }
+    }
+
+    // Suggestion logic
+    if (maxStreak >= 3) {
+      suggestionText = `Tendência de sequência: aposte em ${
+        streakSymbol === "P"
+          ? "Player"
+          : streakSymbol === "B"
+          ? "Banker"
+          : "Tie"
+      } (sequência de ${maxStreak})`;
+    } else if (counts.B > counts.P) {
+      suggestionText = "Banker está dominando. Considere apostar no Banker.";
+    } else if (counts.P > counts.B) {
+      suggestionText = "Player está dominando. Considere apostar no Player.";
+    } else {
+      suggestionText = "Sem tendência clara. Tie é raro, mas possível.";
+    }
+
+    setSuggestion(suggestionText);
+  };
+
+  const chartData = [
+    { name: "Player", value: results.filter((r) => r === "P").length },
+    { name: "Banker", value: results.filter((r) => r === "B").length },
+    { name: "Tie", value: results.filter((r) => r === "T").length },
+  ];
+
+  return (
+    <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-center">Bac Bo Analyzer</h1>
+
+      <Card>
+        <CardContent className="space-y-4 p-4">
+          <Input
+            placeholder="Digite os últimos 50 resultados (ex: PBBPTB...)"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <Button onClick={analyze}>Analisar</Button>
+        </CardContent>
+      </Card>
+
+      {results.length > 0 && (
+        <Card>
+          <CardContent className="space-y-4 p-4">
+            <h2 className="text-xl font-semibold">Análise</h2>
+            <p>{suggestion}</p>
+            <BarChart width={300} height={200} data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="value" fill="#4f46e5" />
+            </BarChart>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default BacBoAnalyzer;
+
+
+Successfully created text document 'Bacbo Pattern Bot' which will be referenced in all future messages with the unique identifier textdoc_id: '68902089829481918346334ffc98066d'
+
